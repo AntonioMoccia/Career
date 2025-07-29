@@ -8,10 +8,11 @@ const opts = {
     secretOrKey: process.env.JWT_SECRET || 'secret',
 };
 export const jwtStrategy = new JwtStrategy(opts, async (jwtPayload, done) => {
-
+    console.log(jwtPayload);
+    
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: jwtPayload.id },
+        const user = await prisma.users.findUnique({
+            where: { id: jwtPayload.userId },
         });
         return done(null, user);
     } catch (error) {
