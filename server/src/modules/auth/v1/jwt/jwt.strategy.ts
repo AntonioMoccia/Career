@@ -7,14 +7,15 @@ const opts = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     secretOrKey: process.env.JWT_SECRET || 'secret',
 };
-export const jwtStrategy = new JwtStrategy(opts, (jwtPayload, done) => {
-    // Find the user in the database using the id from the JWT payload
-    prisma.user.findUnique(jwtPayload.id)
-        .then(user => {
-            return done(null, user);
-        })
-        .catch(err => {
-            return done(err, false);
+export const jwtStrategy = new JwtStrategy(opts, async (jwtPayload, done) => {
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: jwtPayload.id },
         });
-    done(null, jwtPayload);
+        return done(null, user);
+    } catch (error) {
+        return done(error, false);
+        
+    }
 });

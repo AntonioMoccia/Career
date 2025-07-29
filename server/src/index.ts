@@ -13,10 +13,8 @@ app.use(express.json());
 initPassport(app);
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/auth/v1', authRouter);
-app.use("/", (req, res) => {
-    res.send("Welcome to Career Flow API")
-})
+app.use('/v1/api/auth', authRouter);
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 })
