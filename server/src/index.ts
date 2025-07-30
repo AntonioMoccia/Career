@@ -3,9 +3,16 @@ dotenv.config();
 import express, { Application } from "express";
 import { initPassport } from '@modules/auth/v1/passport'
 import cors from 'cors';
+import  cookieParser from 'cookie-parser'
+
+
 import authRouter from '@modules/auth/v1/auth.router';
 import companyRouter from '@modules/company/company.router';
-import  cookieParser from 'cookie-parser'
+import hrRouter from '@modules/hr/hr.router';
+import interviewStepRouter from '@modules/interviewStep/interviewStep.router';
+import jobApplicationRouter from '@modules/jobApplication/jobApplication.router';
+
+
 const app: Application = express()
 const PORT = process.env.PORT || 5000;
 
@@ -17,6 +24,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/companies', companyRouter);
+app.use('/api/v1/hr', hrRouter);
+app.use('/api/v1/interviewStep', interviewStepRouter);
+app.use('/api/v1/jobApplication', jobApplicationRouter);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
