@@ -1,15 +1,14 @@
 import { Router } from 'express';
-
-import { login, refresh, register } from '@modules/auth/v1/auth.controller';
-
+import passport from 'passport';
+import * as controller from './auth.controller';
 
 const router = Router();
 
-router.post('/register', register);
-router.post('/login', login);
-router.post('/refresh', refresh);
+router.post('/register', controller.register);
+router.post('/login', controller.login);
+router.post('/refresh', controller.refresh);
 
-//google auth
-//linkedin auth
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google/callback', passport.authenticate('google', { session: false }), controller.googleCallback);
 
 export default router;

@@ -1,4 +1,4 @@
-import { auth } from '@modules/auth/v1';
+import { auth } from '@modules/auth/v1/auth.middleware';
 import {Router} from 'express'
 
 const router = Router();

@@ -1,22 +1,18 @@
-import { Strategy as JwtStrategy } from 'passport-jwt'
+import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import passport from 'passport';
+import {prisma} from '@config/db';
 
-
-import { ExtractJwt } from 'passport-jwt';
-import { prisma } from '@config/db'
-const opts = {
-    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: process.env.JWT_SECRET || 'secret',
-};
-export const jwtStrategy = new JwtStrategy(opts, async (jwtPayload, done) => {
-    console.log(jwtPayload);
-    
-    try {
-        const user = await prisma.users.findUnique({
-            where: { id: jwtPayload.userId },
-        });
-        return done(null, user);
-    } catch (error) {
-        return done(error, false);
-        
-    }
-});
+export function setupJwtStrategy() {
+    passport.use(new JwtStrategy({
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+        secretOrKey: process.env.JWT_SECRET as string,
+    }, async (payload, done) => {
+        try {
+            const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+            if (!user) return done(null, false);
+            return done(null, user);
+        } catch (err) {
+            return done(err, false);
+        }
+    }));
+}
