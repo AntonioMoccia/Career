@@ -1,11 +1,8 @@
-export { AuthProvider, User } from '@prisma/client'
+export { AuthProviders, Users, Companies, HRContacts, JobApplications, InterviewSteps } from '@prisma/client'
 
 export type TokenPayload = {
     userId: string;
     email?: string;
-    name?: string;
-    provider?: string;
-    providerUserId?: string;
-    iat?: number;
-    exp?: number;
+    username: string;
+    provider: string;
 };

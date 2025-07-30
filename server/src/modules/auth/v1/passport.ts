@@ -1,12 +1,13 @@
-import { Application } from "express";
-import passport from "passport";
-import {jwtStrategy} from './jwt/jwt.strategy';
-const initPassport = (app:Application) => {
+import passport from 'passport';
+import { setupJwtStrategy } from './jwt/jwt.strategy';
+import { setupGoogleStrategy } from './google/google.strategy';
+import { Application } from 'express';
+
+export function initPassport(app:Application) {
+    
+    
     app.use(passport.initialize());
-    passport.use(jwtStrategy);
-
-}
-
-export {
-    initPassport
+    setupJwtStrategy();
+    setupGoogleStrategy();
+    return passport;
 }
