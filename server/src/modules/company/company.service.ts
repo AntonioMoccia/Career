@@ -1,50 +1,26 @@
 import { prisma } from "@config/db";
 import { Companies } from '@types';
 
-
-class CompanyService {
-    async getAll() {
-        try {
-            await prisma.companies.findMany();
-        } catch (error) {
-           throw new Error('Error fetching companies'); 
-        }
-    }  
-    private static instance: CompanyService;
-    
-    private constructor() {}
-
-    static getInstance(): CompanyService {
-        if (!CompanyService.instance) {
-            CompanyService.instance = new CompanyService();
-        }
-        return CompanyService.instance;
-    }
-    
-    async create(data: Omit<Companies, 'id' | 'createdAt'>) {
-    return prisma.companies.create({
-      data
-    });
+export async function getAllCompaniesService() {
+  try {
+    return await prisma.companies.findMany();
+  } catch (error) {
+    throw new Error('Error fetching companies');
   }
-
-  async getById(id: string) {
-    return prisma.companies.findUnique({
-      where: { id }
-    });
-  }
-
-  async update(id: string, data: Partial<Omit<Companies, 'id' | 'createdAt'>>) {
-    return prisma.companies.update({
-      where: { id },
-      data
-    });
-  }
-
-  async delete(id: string) {
-    return prisma.companies.delete({
-      where: { id }
-    });
-  }
-
 }
-export default CompanyService
+
+export async function createCompanyService(data: Omit<Companies, 'id' | 'createdAt'>) {
+  return prisma.companies.create({ data });
+}
+
+export async function getCompanyByIdService(id: string) {
+  return prisma.companies.findUnique({ where: { id } });
+}
+
+export async function updateCompanyService(id: string, data: Partial<Omit<Companies, 'id' | 'createdAt'>>) {
+  return prisma.companies.update({ where: { id }, data });
+}
+
+export async function deleteCompanyService(id: string) {
+  return prisma.companies.delete({ where: { id } });
+}
