@@ -91,4 +91,9 @@
   "coverLetterFile": "https://mio-cv.com/lettera.pdf",
   "userId": "id_utente"
 }
+```
+
+### Utils
+
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
