@@ -91,7 +91,8 @@ model User {
   id            String    @id @default(cuid()) // Identificativo univoco utente
   name          String?   // Nome e cognome utente
   email         String?   @unique // Email utente
-  emailVerified DateTime? // Data verifica email
+  emailVerified Boolean  @default(false) // Data verifica email
+  emailVerifiedData DateTime? // Data verifica email
   image         String?   // URL immagine profilo
   phone         String?   // Numero di telefono utente
   linkedin      String?   // Profilo LinkedIn utente
@@ -123,6 +124,7 @@ model Session {
   id           String   @id @default(cuid()) // Identificativo univoco sessione
   sessionToken String   @unique // Token di sessione
   userId       String   // Utente proprietario sessione
+  deviceId     String   // Identificativo dispositivo
   expires      DateTime // Data/ora scadenza sessione
   user         User     @relation(fields: [userId], references: [id]) // Relazione con User
 }

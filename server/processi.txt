@@ -1,0 +1,20 @@
+Caso d'uso in cui l'utente si registra la prima volta
+
+    Invia alla rotta /auth/register l'username, la password, e l'email
+    il server verifica se non esiste la mail nella tabella User
+        se esiste ritorna che l'utente è già registrato
+        se non esiste lo salva con le credenziali e ritorna un ok al client
+
+
+Caso d'uso in cui l'utente si logga 
+
+    Invio tramite POST sulla rotta /auth/login email e password
+    il server verifica se ho già qualche accessToken o refreshToken salvato nell'Header Authentication o cookie
+        Se ce l'ho prende il device Id e tramoite questo va a prendere la sessione corretta e mi ritorna l'accessToken e il refreshToken
+        Se non ce l'ho genera il deviceId e lo inserisce sia nell'accessToken che nel refreshToken che genera e lo invia al client (il refreshToken sia nel body che nei cookie e l'accessTokennel body)
+        A questo punto l'utente è registrato
+
+
+
+TODO
+    Sistemare la mail verificata
