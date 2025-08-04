@@ -9,131 +9,131 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 model Companies {
-  id        String           @id @default(cuid()) // Identificativo univoco azienda
-  name      String           // Nome azienda
-  location  String?          // Sede principale azienda
-  website   String?          // Sito web aziendale
-  industry  String?          // Settore aziendale (es. IT, Finance, ecc.)
-  size      String?          // Dimensione azienda (es. startup, PMI, corporate)
-  logo      String?          // URL logo azienda
-  jobs      JobApplications[]// Candidature associate a questa azienda
-  contacts  HRContacts[]     // Contatti HR associati all'azienda
-  createdAt DateTime         @default(now()) // Data creazione record
+  id        String            @id @default(cuid()) // Identificativo univoco azienda
+  name      String // Nome azienda
+  location  String? // Sede principale azienda
+  website   String? // Sito web aziendale
+  industry  String? // Settore aziendale (es. IT, Finance, ecc.)
+  size      String? // Dimensione azienda (es. startup, PMI, corporate)
+  logo      String? // URL logo azienda
+  jobs      JobApplications[] // Candidature associate a questa azienda
+  contacts  HRContacts[] // Contatti HR associati all'azienda
+  createdAt DateTime          @default(now()) // Data creazione record
 }
 
 model HRContacts {
-  id        String           @id @default(cuid()) // Identificativo univoco contatto HR
-  companyId String           // Azienda di appartenenza
-  company   Companies          @relation(fields: [companyId], references: [id]) // Relazione con Companies
-  name      String           // Nome e cognome contatto HR
-  email     String?          // Email contatto HR
-  phone     String?          // Telefono contatto HR
-  role      String?          // Ruolo (es. Recruiter, HR Manager, Tech Lead)
-  notes     String?          // Note personali sul contatto
-  linkedin  String?          // Profilo LinkedIn del contatto
+  id        String            @id @default(cuid()) // Identificativo univoco contatto HR
+  companyId String // Azienda di appartenenza
+  company   Companies         @relation(fields: [companyId], references: [id]) // Relazione con Companies
+  name      String // Nome e cognome contatto HR
+  email     String? // Email contatto HR
+  phone     String? // Telefono contatto HR
+  role      String? // Ruolo (es. Recruiter, HR Manager, Tech Lead)
+  notes     String? // Note personali sul contatto
+  linkedin  String? // Profilo LinkedIn del contatto
   jobs      JobApplications[] @relation("HRContactsOnJobs") // Candidature seguite da questo HR
   steps     InterviewSteps[] // Step di colloquio condotti da questo HR
-  createdAt DateTime         @default(now()) // Data creazione record
+  createdAt DateTime          @default(now()) // Data creazione record
 }
 
 model JobApplications {
-  id          String            @id @default(cuid()) // Identificativo univoco candidatura
-  companyId   String            // Azienda a cui è stata inviata la candidatura
-  company     Companies           @relation(fields: [companyId], references: [id]) // Relazione con Companies
-  position    String            // Posizione lavorativa per cui ci si candida
-  description String?           // Descrizione/annuncio della posizione
-  status      ApplicationStatus @default(APPLIED) // Stato candidatura (APPLIED, IN_PROGRESS, ecc.)
-  steps       InterviewSteps[]  // Step/interviste associati a questa candidatura
-  hrContacts  HRContacts[]       @relation("HRContactsOnJobs") // HR principali associati
-  notes       String?           // Note personali sulla candidatura
-  appliedAt   DateTime?         // Data in cui è stata inviata la candidatura
-  source      String?           // Fonte candidatura (es. LinkedIn, sito azienda)
-  cvFile      String?           // Link al CV inviato
-  coverLetterFile String?       // Link alla lettera di presentazione
-  userId      String?           // Utente proprietario della candidatura (multiutente)
-  createdAt   DateTime          @default(now()) // Data creazione record
+  id              String            @id @default(cuid()) // Identificativo univoco candidatura
+  companyId       String // Azienda a cui è stata inviata la candidatura
+  company         Companies         @relation(fields: [companyId], references: [id]) // Relazione con Companies
+  position        String // Posizione lavorativa per cui ci si candida
+  description     String? // Descrizione/annuncio della posizione
+  status          ApplicationStatus @default(APPLIED) // Stato candidatura (APPLIED, IN_PROGRESS, ecc.)
+  steps           InterviewSteps[] // Step/interviste associati a questa candidatura
+  hrContacts      HRContacts[]      @relation("HRContactsOnJobs") // HR principali associati
+  notes           String? // Note personali sulla candidatura
+  appliedAt       DateTime? // Data in cui è stata inviata la candidatura
+  source          String? // Fonte candidatura (es. LinkedIn, sito azienda)
+  cvFile          String? // Link al CV inviato
+  coverLetterFile String? // Link alla lettera di presentazione
+  userId          String? // Utente proprietario della candidatura (multiutente)
+  createdAt       DateTime          @default(now()) // Data creazione record
 }
 
 model InterviewSteps {
-  id         String         @id @default(cuid()) // Identificativo univoco step/intervista
-  jobId      String         // Candidatura associata
-  job        JobApplications @relation(fields: [jobId], references: [id]) // Relazione con JobApplications
-  title      String         // Titolo step/intervista (es. "Call HR", "Technical Interview")
-  date       DateTime       // Data e ora dello step/intervista
-  status     StepStatus     @default(SCHEDULED) // Stato step (SCHEDULED, COMPLETED, ecc.)
-  notes      String?        // Note personali sullo step
-  location   String?        // Luogo/interfaccia (es. Zoom, Google Meet, sede fisica)
-  interviewer String?       // Nome intervistatore
-  feedback   String?        // Feedback ricevuto per questo step
-  reminderAt DateTime?      // Data/ora promemoria per follow-up
-  hrContactId String?       // HR che ha condotto lo step
-  hrContact   HRContacts? @relation(fields: [hrContactId], references: [id]) // Relazione con HRContacts
+  id          String          @id @default(cuid()) // Identificativo univoco step/intervista
+  jobId       String // Candidatura associata
+  job         JobApplications @relation(fields: [jobId], references: [id]) // Relazione con JobApplications
+  title       String // Titolo step/intervista (es. "Call HR", "Technical Interview")
+  date        DateTime // Data e ora dello step/intervista
+  status      StepStatus      @default(SCHEDULED) // Stato step (SCHEDULED, COMPLETED, ecc.)
+  notes       String? // Note personali sullo step
+  location    String? // Luogo/interfaccia (es. Zoom, Google Meet, sede fisica)
+  interviewer String? // Nome intervistatore
+  feedback    String? // Feedback ricevuto per questo step
+  reminderAt  DateTime? // Data/ora promemoria per follow-up
+  hrContactId String? // HR che ha condotto lo step
+  hrContact   HRContacts?     @relation(fields: [hrContactId], references: [id]) // Relazione con HRContacts
 }
 
 enum ApplicationStatus {
-  APPLIED      // Candidatura inviata
-  IN_PROGRESS  // Processo di selezione in corso
-  OFFER        // Offerta ricevuta
-  REJECTED     // Candidatura rifiutata
+  APPLIED // Candidatura inviata
+  IN_PROGRESS // Processo di selezione in corso
+  OFFER // Offerta ricevuta
+  REJECTED // Candidatura rifiutata
 }
 
 enum StepStatus {
-  SCHEDULED   // Step pianificato
-  COMPLETED   // Step completato
-  CANCELED    // Step annullato
+  SCHEDULED // Step pianificato
+  COMPLETED // Step completato
+  CANCELED // Step annullato
 }
 
-
+//autenticaiton models
 model User {
-  id            String    @id @default(cuid()) // Identificativo univoco utente
-  name          String?   // Nome e cognome utente
-  email         String?   @unique // Email utente
-  emailVerified Boolean  @default(false) // Data verifica email
+  id                String    @id @default(cuid()) // Identificativo univoco utente
+  name              String? // Nome e cognome utente
+  email             String?   @unique // Email utente
+  emailVerified     Boolean   @default(false) // Data verifica email
   emailVerifiedData DateTime? // Data verifica email
-  image         String?   // URL immagine profilo
-  phone         String?   // Numero di telefono utente
-  linkedin      String?   // Profilo LinkedIn utente
-  accounts      Account[] // Account di autenticazione collegati
-  sessions      Session[] // Sessioni attive utente
+  image             String? // URL immagine profilo
+  phone             String? // Numero di telefono utente
+  linkedin          String? // Profilo LinkedIn utente
+  accounts          Account[] // Account di autenticazione collegati
+  sessions          Session[] // Sessioni attive utente
   // puoi aggiungere altri campi custom se vuoi
 }
 
 model Account {
-  id                 String   @id @default(cuid()) // Identificativo univoco account
-  userId             String   // Utente proprietario account
-  type               String   // Tipo account (es. credentials, oauth)
-  provider           String   // Provider (es. google, github, credentials)
-  providerAccountId  String   // ID account presso il provider
-  hashedPassword     String?  // Password hashata (se presente)
-  refresh_token      String?  // Refresh token OAuth
-  access_token       String?  // Access token OAuth
-  expires_at         Int?     // Scadenza access token
-  token_type         String?  // Tipo token OAuth
-  scope              String?  // Scope OAuth
-  id_token           String?  // ID token OAuth
-  session_state      String?  // Stato sessione OAuth
-  user               User     @relation(fields: [userId], references: [id]) // Relazione con User
+  id                String    @id @default(cuid()) // Identificativo univoco account
+  userId            String // Utente proprietario account
+  type              String // Tipo account (es. credentials, oauth)
+  provider          String // Provider (es. google, github, credentials)
+  providerAccountId String // ID account presso il provider
+  hashedPassword    String? // Password hashata (se presente)
+  refresh_token     String? // Refresh token OAuth
+  access_token      String? // Access token OAuth
+  expires_at        Int? // Scadenza access token
+  token_type        String? // Tipo token OAuth
+  scope             String? // Scope OAuth
+  id_token          String? // ID token OAuth
+  session_state     String? // Stato sessione OAuth
+  user              User      @relation(fields: [userId], references: [id]) // Relazione con User
+  sessions          Session[]
 
   @@unique([provider, providerAccountId]) // Unicità provider+providerAccountId
 }
 
 model Session {
   id           String   @id @default(cuid()) // Identificativo univoco sessione
-  sessionToken String   @unique // Token di sessione
-  userId       String   // Utente proprietario sessione
-  deviceId     String   // Identificativo dispositivo
+  userId       String // Utente proprietario sessione
+  deviceId     String // Identificativo dispositivo
   expires      DateTime // Data/ora scadenza sessione
+  accountId    String // Account associato alla sessione
+  account      Account  @relation(fields: [accountId], references: [id]) //
   user         User     @relation(fields: [userId], references: [id]) // Relazione con User
+
 }
 
 model VerificationToken {
-  identifier String   // Identificatore (es. email)
+  identifier String // Identificatore (es. email)
   token      String   @unique // Token di verifica
   expires    DateTime // Data/ora scadenza token
 
   @@unique([identifier, token]) // Unicità identifier+token
 }
-
