@@ -1,17 +1,11 @@
 "use client";
 import React, { useState } from 'react';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 
-interface RegisterFormProps {
-  onSuccess?: () => void;
-  onSwitchToLogin?: () => void;
-}
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({ 
-  onSuccess, 
-  onSwitchToLogin 
-}) => {
+
+export const SignUpForm = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -20,7 +14,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { register, loading } = useAuth();
+  const { register } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -57,6 +52,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true)
     setError('');
     setSuccess(false);
 
@@ -66,20 +62,22 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       return;
     }
 
-    const result = await register(formData.email, formData.password, formData.username);
-    
-    if (result.success) {
+    try {
+
+      const result = await register(formData.email, formData.password, formData.username);
       setSuccess(true);
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-      });
-      onSuccess?.();
-    } else {
-      setError(result.error || 'Errore durante la registrazione');
+    } catch (error) {
+      setError('Errore durante la registrazione');
+      setSuccess(false);
     }
+
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    });
+    setLoading(false)
   };
 
   if (success) {
@@ -97,14 +95,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           </p>
         </div>
 
-        {onSwitchToLogin && (
-          <Button
-            onClick={onSwitchToLogin}
-            className="w-full"
-          >
-            Vai al Login
-          </Button>
-        )}
+       
       </div>
     );
   }
@@ -198,20 +189,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         </Button>
       </form>
 
-      {onSwitchToLogin && (
-        <div className="text-center">
-          <p className="text-gray-600 text-sm">
-            Hai già un account?{' '}
-            <button
-              onClick={onSwitchToLogin}
-              className="text-blue-600 hover:text-blue-500 font-medium"
-              disabled={loading}
-            >
-              Accedi
-            </button>
-          </p>
-        </div>
-      )}
     </div>
   );
 };

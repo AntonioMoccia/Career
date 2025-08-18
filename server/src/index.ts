@@ -19,11 +19,11 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: "http://localhost:3001", // il tuo frontend
+    origin: "http://localhost:3000", // il tuo frontend
     credentials: true, // necessario per cookie / Authorization headers
   })
 );
-app.all("/api/v1/auth/*splat", toNodeHandler(auth.handler));
+app.all("/api/auth/*splat", toNodeHandler(auth.handler));
 app.use(cookieParser());
 app.use(express.json());
 //initPassport(app);
