@@ -57,51 +57,112 @@ async function findOrCreateSession(
   deviceId: string,
   accountId: string
 ) {
-  // Una sola query per cercare qualsiasi sessione per questo utente+dispositivo
-  const existingSession = await prisma.session.findFirst({
-    where: {
-      userId: userId,
-      deviceId: deviceId,
-    },
-  });
-
-  if (existingSession) {
-    // Se la sessione esiste e non è scaduta, restituiscila così com'è
-    if (existingSession.expires > new Date()) {
-      return existingSession;
-    }
-
-    // Se è scaduta, aggiornala con nuova scadenza
-    return await prisma.session.update({
-      where: { id: existingSession.id },
-      data: {
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 giorni
-        accountId: accountId, // Assicurati che sia collegata all'account corretto
-      },
-    });
-  } else {
-    // Crea una nuova sessione solo se non esiste proprio
-    return await prisma.session.create({
-      data: {
+  // Usa transazione per evitare race conditions
+  return await prisma.$transaction(async (tx) => {
+    // Cerca sessione esistente
+    const existingSession = await tx.session.findFirst({
+      where: {
         userId: userId,
         deviceId: deviceId,
-        accountId: accountId,
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 giorni
       },
     });
-  }
+
+    if (existingSession) {
+      // Se la sessione esiste e non è scaduta, restituiscila
+      if (existingSession.expires > new Date()) {
+        return existingSession;
+      }
+
+      // Se è scaduta, aggiornala con nuova scadenza
+      return await tx.session.update({
+        where: { id: existingSession.id },
+        data: {
+          expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 giorni
+          accountId: accountId, // Assicurati che sia collegata all'account corretto
+        },
+      });
+    } else {
+      // Crea una nuova sessione solo se non esiste
+      return await tx.session.create({
+        data: {
+          userId: userId,
+          deviceId: deviceId,
+          accountId: accountId,
+          expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 giorni
+        },
+      });
+    }
+  });
 }
 export async function verifyToken(
   token: string
-): Promise<{ userId: string; sessionId: string; deviceId: string } | null> {
-  console.log(token);
+): Promise<{ 
+  valid: boolean; 
+  expired: boolean; 
+  data?: { userId: string; sessionId: string; deviceId: string };
+  error?: string;
+}> {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    return decoded as { userId: string; sessionId: string; deviceId: string };
+    
+    // Token valido
+    return {
+      valid: true,
+      expired: false,
+      data: decoded as { userId: string; sessionId: string; deviceId: string }
+    };
   } catch (error) {
-    return null;
+    if (error instanceof jwt.TokenExpiredError) {
+      // Token scaduto ma strutturalmente valido
+      try {
+        const decoded = jwt.decode(token) as any;
+        return {
+          valid: false,
+          expired: true,
+          data: decoded ? {
+            userId: decoded.userId,
+            sessionId: decoded.sessionId,
+            deviceId: decoded.deviceId
+          } : undefined,
+          error: 'Token scaduto'
+        };
+      } catch {
+        return {
+          valid: false,
+          expired: true,
+          error: 'Token scaduto e malformato'
+        };
+      }
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      // Token malformato
+      return {
+        valid: false,
+        expired: false,
+        error: 'Token malformato o firma non valida'
+      };
+    } else {
+      // Altri errori
+      return {
+        valid: false,
+        expired: false,
+        error: 'Errore di verifica token'
+      };
+    }
   }
 }
+
+// Funzione helper per verificare solo la validità (backward compatibility)
+export async function isTokenValid(token: string): Promise<boolean> {
+  const result = await verifyToken(token);
+  return result.valid;
+}
+
+// Funzione helper per ottenere i dati del token (se valido)
+export async function getTokenData(token: string): Promise<{ userId: string; sessionId: string; deviceId: string } | null> {
+  const result = await verifyToken(token);
+  return result.valid ? result.data || null : null;
+}
+
 export async function verifyRefreshToken(
   refreshToken: string
 ): Promise<{ userId: string; sessionId: string; deviceId: string } | null> {
@@ -112,6 +173,7 @@ export async function verifyRefreshToken(
     );
     return decoded as { userId: string; sessionId: string; deviceId: string };
   } catch (error) {
+    console.error('Errore verifica refresh token:', error instanceof Error ? error.message : 'Errore sconosciuto');
     return null;
   }
 }
@@ -182,36 +244,43 @@ export async function login(email: string, password: string, deviceId: string) {
 }
 
 export async function refreshToken(refreshToken: string, sessionId?: string) {
-  const session = await prisma.session.findUnique({
-    where: { id: sessionId },
-  });
-  if (!session) {
-    throw new Error("Invalid session");
-  }
+  try {
+    const session = await prisma.session.findUnique({
+      where: { id: sessionId },
+    });
+    if (!session) {
+      throw new Error("Sessione non valida");
+    }
 
-  const decoded = jwt.verify(
-    refreshToken,
-    process.env.REFRESH_TOKEN_SECRET as string
-  ) as any;
-  if (!decoded || !decoded.userId) {
-    throw new Error("Invalid refresh token");
-  }
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET as string
+    ) as any;
+    if (!decoded || !decoded.userId) {
+      throw new Error("Refresh token non valido");
+    }
 
-  // Usa il deviceId decodificato dal token se non passato esplicitamente
-  //verifica se la sessione non è scaduta
-  if (new Date(session.expires) <= new Date()) {
-    throw new Error("Session expired");
-  }
-  const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-  if (!user) {
-    throw new Error("User not found");
-  }
+    // Verifica se la sessione non è scaduta
+    if (new Date(session.expires) <= new Date()) {
+      throw new Error("Sessione scaduta");
+    }
+    
+    const user = await prisma.user.findUnique({ 
+      where: { id: decoded.userId } 
+    });
+    if (!user) {
+      throw new Error("Utente non trovato");
+    }
 
-  return generateToken({
-    userId: user.id,
-    deviceId: session.deviceId,
-    sessionId: session.id,
-  });
+    return generateToken({
+      userId: user.id,
+      deviceId: session.deviceId,
+      sessionId: session.id,
+    });
+  } catch (error) {
+    console.error('Errore refresh token:', error instanceof Error ? error.message : 'Errore sconosciuto');
+    throw error;
+  }
 }
 
 export async function findOrCreateGoogleUser(profile: any, deviceId?: string) {

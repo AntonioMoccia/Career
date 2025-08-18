@@ -86,54 +86,61 @@ enum StepStatus {
 
 //autenticaiton models
 model User {
-  id                String    @id @default(cuid()) // Identificativo univoco utente
-  name              String? // Nome e cognome utente
-  email             String?   @unique // Email utente
-  emailVerified     Boolean   @default(false) // Data verifica email
-  emailVerifiedData DateTime? // Data verifica email
-  image             String? // URL immagine profilo
-  phone             String? // Numero di telefono utente
-  linkedin          String? // Profilo LinkedIn utente
-  accounts          Account[] // Account di autenticazione collegati
-  sessions          Session[] // Sessioni attive utente
-  // puoi aggiungere altri campi custom se vuoi
-}
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
 
-model Account {
-  id                String    @id @default(cuid()) // Identificativo univoco account
-  userId            String // Utente proprietario account
-  type              String // Tipo account (es. credentials, oauth)
-  provider          String // Provider (es. google, github, credentials)
-  providerAccountId String // ID account presso il provider
-  hashedPassword    String? // Password hashata (se presente)
-  refresh_token     String? // Refresh token OAuth
-  access_token      String? // Access token OAuth
-  expires_at        Int? // Scadenza access token
-  token_type        String? // Tipo token OAuth
-  scope             String? // Scope OAuth
-  id_token          String? // ID token OAuth
-  session_state     String? // Stato sessione OAuth
-  user              User      @relation(fields: [userId], references: [id]) // Relazione con User
-  sessions          Session[]
-
-  @@unique([provider, providerAccountId]) // Unicità provider+providerAccountId
+  @@unique([email])
+  @@map("user")
 }
 
 model Session {
-  id           String   @id @default(cuid()) // Identificativo univoco sessione
-  userId       String // Utente proprietario sessione
-  deviceId     String // Identificativo dispositivo
-  expires      DateTime // Data/ora scadenza sessione
-  accountId    String // Account associato alla sessione
-  account      Account  @relation(fields: [accountId], references: [id]) //
-  user         User     @relation(fields: [userId], references: [id]) // Relazione con User
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([token])
+  @@map("session")
 }
 
-model VerificationToken {
-  identifier String // Identificatore (es. email)
-  token      String   @unique // Token di verifica
-  expires    DateTime // Data/ora scadenza token
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
 
-  @@unique([identifier, token]) // Unicità identifier+token
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
 }

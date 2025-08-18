@@ -29,31 +29,35 @@ export async function login(req: Request, res: Response) {
         .json({ error: "Email e password sono obbligatori" });
     }
 
-    // Prova a estrarre il deviceId dal token Authorization se presente
-    let deviceId: string | undefined;
-    const authHeader =
-      req.headers["authorization"] || req.headers["Authorization"];
-
-    if (
-      authHeader &&
-      typeof authHeader === "string" &&
-      authHeader.startsWith("Bearer ")
-    ) {
-      const token = authHeader.replace("Bearer ", "");
-      try {
-        const decoded: any = jwt.decode(token);
-
-        if (decoded && decoded.deviceId) {
-          deviceId = decoded.deviceId;
+    // Gestione DeviceId sicura
+    let deviceId: string;
+    
+    // 1. Prova a prenderlo dal body (client esplicito)
+    if (req.body.deviceId && typeof req.body.deviceId === 'string') {
+      deviceId = req.body.deviceId;
+    } 
+    // 2. Prova a estrarlo da un token esistente (refresh login)
+    else {
+      const authHeader = req.headers["authorization"] || req.headers["Authorization"];
+      
+      if (authHeader && typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+        const token = authHeader.replace("Bearer ", "");
+        try {
+          const decoded: any = jwt.decode(token);
+          if (decoded && decoded.deviceId) {
+            deviceId = decoded.deviceId;
+          } else {
+            // Token senza deviceId, genera nuovo
+            deviceId = crypto.randomUUID();
+          }
+        } catch {
+          // Token malformato, genera nuovo deviceId
+          deviceId = crypto.randomUUID();
         }
-      } catch {
-        // Token non valido, continua senza deviceId
+      } else {
+        // Nessun header, nuovo dispositivo
+        deviceId = crypto.randomUUID();
       }
-    }
-
-    // Se non c'è deviceId, generane uno nuovo
-    if (!deviceId) {
-      deviceId = crypto.randomUUID();
     }
 
     // Esegui il login tramite service
@@ -76,8 +80,12 @@ export async function login(req: Request, res: Response) {
       message: "Login effettuato con successo",
     });
   } catch (e) {
+    console.error('Errore login:', e);
     if (e instanceof Error) {
-      res.status(400).json({ error: e.message });
+      res.status(400).json({ 
+        error: e.message,
+        ...(process.env.NODE_ENV === 'development' && { details: e.stack })
+      });
     } else {
       res.status(500).json({ error: "Errore interno del server" });
     }
@@ -114,10 +122,14 @@ export async function refresh(req: Request, res: Response) {
     const token = await authService.refreshToken(refreshToken, sessionId);
     res.json({ token });
   } catch (e) {
+    console.error('Errore refresh token:', e);
     if (e instanceof Error) {
-      res.status(400).json({ error: e.message });
+      res.status(400).json({ 
+        error: e.message,
+        ...(process.env.NODE_ENV === 'development' && { details: e.stack })
+      });
     } else {
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ error: "Errore interno del server" });
     }
   }
 }
@@ -169,22 +181,25 @@ export async function googleCallback(req: Request, res: Response) {
       return res.status(400).json({ error: "Account Google non trovato" });
     }
 
-    // Elimina eventuali sessioni precedenti per lo stesso userId+deviceId
-    await prisma.session.deleteMany({
-      where: {
-        userId: user.id,
-        deviceId: deviceId,
-      },
-    });
+    // Usa la stessa logica con transazioni per evitare race conditions
+    const session = await prisma.$transaction(async (tx) => {
+      // Elimina eventuali sessioni precedenti per lo stesso userId+deviceId
+      await tx.session.deleteMany({
+        where: {
+          userId: user.id,
+          deviceId: deviceId,
+        },
+      });
 
-    // Crea nuova sessione
-    const session = await prisma.session.create({
-      data: {
-        userId: user.id,
-        accountId: googleAccount.id,
-        deviceId: deviceId,
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
+      // Crea nuova sessione
+      return await tx.session.create({
+        data: {
+          userId: user.id,
+          accountId: googleAccount.id,
+          deviceId: deviceId,
+          expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
     });
 
     // Genera JWT e refreshToken per l'utente Google con sessionId
@@ -221,7 +236,10 @@ export async function googleCallback(req: Request, res: Response) {
   } catch (e) {
     console.error("Errore Google callback:", e);
     if (e instanceof Error) {
-      res.status(400).json({ error: e.message });
+      res.status(400).json({ 
+        error: e.message,
+        ...(process.env.NODE_ENV === 'development' && { details: e.stack })
+      });
     } else {
       res.status(500).json({ error: "Errore interno del server" });
     }
@@ -266,9 +284,87 @@ export async function me(req: Request, res: Response) {
   } catch (e) {
     console.error("Errore me:", e);
     if (e instanceof Error) {
-      res.status(400).json({ error: e.message });
+      res.status(400).json({ 
+        error: e.message,
+        ...(process.env.NODE_ENV === 'development' && { details: e.stack })
+      });
     } else {
       res.status(500).json({ error: "Errore interno del server" });
     }
+  }
+}
+
+export async function verifyAccessToken(req: Request, res: Response) {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ 
+        success: false, 
+        error: "Token di accesso richiesto",
+        code: "NO_TOKEN"
+      });
+    }
+
+    // Usa la nuova funzione di verifica
+    const tokenResult = await authService.verifyToken(token);
+
+    if (tokenResult.valid && tokenResult.data) {
+      // Verifica che la sessione esista ancora nel database
+      const session = await prisma.session.findUnique({
+        where: { id: tokenResult.data.sessionId },
+        include: { user: true }
+      });
+
+      if (!session || session.expires < new Date()) {
+        return res.status(401).json({ 
+          success: false, 
+          error: "Sessione scaduta",
+          code: "SESSION_EXPIRED"
+        });
+      }
+
+      res.json({ 
+        success: true,
+        user: {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.name,
+          emailVerified: session.user.emailVerified
+        },
+        tokenInfo: {
+          valid: true,
+          expired: false
+        }
+      });
+    } else if (tokenResult.expired) {
+      return res.status(401).json({ 
+        success: false, 
+        error: "Token scaduto",
+        code: "TOKEN_EXPIRED",
+        tokenInfo: {
+          valid: false,
+          expired: true
+        }
+      });
+    } else {
+      return res.status(401).json({ 
+        success: false, 
+        error: tokenResult.error || "Token non valido",
+        code: "INVALID_TOKEN",
+        tokenInfo: {
+          valid: false,
+          expired: false
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Verify token error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Errore interno del server",
+      code: "INTERNAL_ERROR"
+    });
   }
 }

@@ -1,24 +1,17 @@
 "use client";
 import React, { useState } from 'react';
-import { useAuth } from '@/context/auth-context';
+
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { authApi } from '@/lib/auth-api'
-interface LoginFormProps {
-  onSuccess?: () => void;
-  onSwitchToRegister?: () => void;
-}
-
-export const SignInForm: React.FC<LoginFormProps> = ({
-  onSuccess,
-  onSwitchToRegister
-}) => {
+import { useAuth } from '@/context/auth-provider'
+export const SignInForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = authApi();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const { login } = useAuth()
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,8 +23,11 @@ export const SignInForm: React.FC<LoginFormProps> = ({
       setLoading(false);
       return;
     }
-
-    await login(email, password);
+    try {
+      await login(email, password);
+    } catch (error) {
+      setError('Email o password non validi');
+    }
     setLoading(false);
     router.push("/dashboard");
 
@@ -89,6 +85,7 @@ export const SignInForm: React.FC<LoginFormProps> = ({
         )}
 
         <Button
+
           type="submit"
           disabled={loading}
           className="w-full"
@@ -98,12 +95,12 @@ export const SignInForm: React.FC<LoginFormProps> = ({
       </form>
 
 
-      <div className="text-left">
+      {/*       <div className="text-left">
         <p className="text-gray-600 text-sm">
           Non hai un account?{' '}
 
           <Button
-            onClick={goToRegister}
+            onSubmit={goToRegister}
             variant={'link'}
             className="text-blue-600 pl-1 hover:text-blue-500 font-medium underline"
             disabled={loading}
@@ -111,7 +108,7 @@ export const SignInForm: React.FC<LoginFormProps> = ({
             Registrati
           </Button>
         </p>
-      </div>
+      </div> */}
 
 
 

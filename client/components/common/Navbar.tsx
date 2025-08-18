@@ -1,11 +1,11 @@
 "use client";
 import React, { useState } from 'react';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-provider'
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { session, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = () => {
@@ -22,8 +22,8 @@ export const Navbar: React.FC = () => {
             <Link href="/" className="flex-shrink-0">
               <h1 className="text-xl font-bold text-gray-900">CareerFlow</h1>
             </Link>
-            
-            {user && (
+
+            {session?.user && (
               <div className="ml-10 flex items-baseline space-x-4">
                 <Link
                   href="/dashboard"
@@ -49,28 +49,22 @@ export const Navbar: React.FC = () => {
 
           {/* Sezione utente */}
           <div className="flex items-center">
-            {user ? (
+            {session?.user ? (
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <div className="flex items-center">
-                    {user.image ? (
-                      <img
-                        className="h-8 w-8 rounded-full"
-                        src={user.image}
-                        alt={user.name || 'Avatar utente'}
-                      />
-                    ) : (
+      
                       <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
                         <span className="text-sm font-medium text-gray-700">
-                          {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                          {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'U'}
                         </span>
                       </div>
-                    )}
+                    
                     <span className="ml-2 text-gray-700 text-sm font-medium">
-                      {user.name || user.email}
+                      {session?.user?.name || session?.user?.email}
                     </span>
                     <svg
                       className="ml-1 h-5 w-5 text-gray-400"
@@ -89,10 +83,10 @@ export const Navbar: React.FC = () => {
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 ring-1 ring-black ring-opacity-5">
                     <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-gray-500">{user.email}</div>
+                      <div className="font-medium">{session?.user?.name}</div>
+                      <div className="text-gray-500">{session?.user?.email}</div>
                     </div>
-                    
+
                     <Link
                       href="/profile"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -100,7 +94,7 @@ export const Navbar: React.FC = () => {
                     >
                       Il mio profilo
                     </Link>
-                    
+
                     <Link
                       href="/settings"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -108,7 +102,7 @@ export const Navbar: React.FC = () => {
                     >
                       Impostazioni
                     </Link>
-                    
+
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

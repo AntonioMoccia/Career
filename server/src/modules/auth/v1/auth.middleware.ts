@@ -35,34 +35,43 @@ const auth = (req: Request, res: Response, next: NextFunction): void => {
       }
 
       // Verifica il token usando il nostro sistema custom
-      const decoded = await authService.verifyToken(token);
+      const tokenResult = await authService.verifyToken(token);
 
-      if (!decoded || !decoded.userId || !decoded.sessionId) {
+      if (tokenResult.valid && tokenResult.data) {
+        // Token valido - verifica anche la sessione nel database
+        const sessionValid = await authService.validateSession(tokenResult.data.sessionId);
+        
+        if (sessionValid) {
+          // Tutto ok, popola req.user
+          authReq.user = {
+            id: tokenResult.data.userId,
+            sessionId: tokenResult.data.sessionId,
+            deviceId: tokenResult.data.deviceId
+          };
+          next();
+        } else {
+          return res.status(401).json({ 
+            success: false,
+            error: 'Sessione non valida o scaduta',
+            code: 'INVALID_SESSION'
+          });
+        }
+      } else if (tokenResult.expired) {
+        // Token scaduto - suggerisci refresh
         return res.status(401).json({ 
           success: false,
-          error: 'Token non valido' 
+          error: 'Token scaduto',
+          code: 'TOKEN_EXPIRED',
+          message: 'Usa il refresh token per ottenere un nuovo access token'
         });
-      }
-
-      // Verifica la sessione nel database
-      const sessionValidation = await authService.validateSession(decoded.sessionId);
-      
-      if (!sessionValidation) {
+      } else {
+        // Token malformato o altri errori
         return res.status(401).json({ 
           success: false,
-          error: 'Sessione non valida o scaduta' 
+          error: tokenResult.error || 'Token non valido',
+          code: 'INVALID_TOKEN'
         });
       }
-      
-
-      // Aggiungi i dati dell'utente alla request
-      authReq.user = {
-        id: decoded.userId,
-        sessionId: decoded.sessionId,
-        deviceId: decoded.deviceId
-      };
-
-      next();
     } catch (error) {
       console.error('Auth middleware error:', error);
       return res.status(401).json({ 

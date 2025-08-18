@@ -1,4 +1,3 @@
-import { auth } from '@modules/auth/v1/auth.middleware';
 import { Router } from 'express';
 import { getAllCompanies, getCompanyById, createCompany, updateCompany, deleteCompany } from './company.controller';
 
@@ -12,7 +11,7 @@ const router = Router();
 // If you want to apply auth only to specific routes, you can do it like this:
 // router.get('/', auth, getAllCompanies);
 
-router.use(auth);
+//router.use(auth);
 // GET all companies
 router.get('/', getAllCompanies);
 
