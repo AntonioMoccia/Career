@@ -14,6 +14,83 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+model Companies {
+  id        String           @id @default(cuid()) // Identificativo univoco azienda
+  name      String           // Nome azienda
+  location  String?          // Sede principale azienda
+  website   String?          // Sito web aziendale
+  industry  String?          // Settore aziendale (es. IT, Finance, ecc.)
+  size      String?          // Dimensione azienda (es. startup, PMI, corporate)
+  logo      String?          // URL logo azienda
+  jobs      JobApplications[]// Candidature associate a questa azienda
+  contacts  HRContacts[]     // Contatti HR associati all'azienda
+  createdAt DateTime         @default(now()) // Data creazione record
+}
+
+model HRContacts {
+  id        String           @id @default(cuid()) // Identificativo univoco contatto HR
+  companyId String           // Azienda di appartenenza
+  company   Companies          @relation(fields: [companyId], references: [id]) // Relazione con Companies
+  name      String           // Nome e cognome contatto HR
+  email     String?          // Email contatto HR
+  phone     String?          // Telefono contatto HR
+  role      String?          // Ruolo (es. Recruiter, HR Manager, Tech Lead)
+  notes     String?          // Note personali sul contatto
+  linkedin  String?          // Profilo LinkedIn del contatto
+  jobs      JobApplications[] @relation("HRContactsOnJobs") // Candidature seguite da questo HR
+  steps     InterviewSteps[] // Step di colloquio condotti da questo HR
+  createdAt DateTime         @default(now()) // Data creazione record
+}
+
+model JobApplications {
+  id          String            @id @default(cuid()) // Identificativo univoco candidatura
+  companyId   String            // Azienda a cui è stata inviata la candidatura
+  company     Companies           @relation(fields: [companyId], references: [id]) // Relazione con Companies
+  position    String            // Posizione lavorativa per cui ci si candida
+  description String?           // Descrizione/annuncio della posizione
+  status      ApplicationStatus @default(APPLIED) // Stato candidatura (APPLIED, IN_PROGRESS, ecc.)
+  steps       InterviewSteps[]  // Step/interviste associati a questa candidatura
+  hrContacts  HRContacts[]       @relation("HRContactsOnJobs") // HR principali associati
+  notes       String?           // Note personali sulla candidatura
+  appliedAt   DateTime?         // Data in cui è stata inviata la candidatura
+  source      String?           // Fonte candidatura (es. LinkedIn, sito azienda)
+  cvFile      String?           // Link al CV inviato
+  coverLetterFile String?       // Link alla lettera di presentazione
+  userId      String?           // Utente proprietario della candidatura (multiutente)
+  createdAt   DateTime          @default(now()) // Data creazione record
+}
+
+model InterviewSteps {
+  id         String         @id @default(cuid()) // Identificativo univoco step/intervista
+  jobId      String         // Candidatura associata
+  job        JobApplications @relation(fields: [jobId], references: [id]) // Relazione con JobApplications
+  title      String         // Titolo step/intervista (es. "Call HR", "Technical Interview")
+  date       DateTime       // Data e ora dello step/intervista
+  status     StepStatus     @default(SCHEDULED) // Stato step (SCHEDULED, COMPLETED, ecc.)
+  notes      String?        // Note personali sullo step
+  location   String?        // Luogo/interfaccia (es. Zoom, Google Meet, sede fisica)
+  interviewer String?       // Nome intervistatore
+  feedback   String?        // Feedback ricevuto per questo step
+  reminderAt DateTime?      // Data/ora promemoria per follow-up
+  hrContactId String?       // HR che ha condotto lo step
+  hrContact   HRContacts? @relation(fields: [hrContactId], references: [id]) // Relazione con HRContacts
+}
+
+enum ApplicationStatus {
+  APPLIED      // Candidatura inviata
+  IN_PROGRESS  // Processo di selezione in corso
+  OFFER        // Offerta ricevuta
+  REJECTED     // Candidatura rifiutata
+}
+
+enum StepStatus {
+  SCHEDULED   // Step pianificato
+  COMPLETED   // Step completato
+  CANCELED    // Step annullato
+}
+
+
 model User {
   id            String    @id
   name          String
