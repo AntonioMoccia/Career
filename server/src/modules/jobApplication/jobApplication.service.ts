@@ -10,13 +10,28 @@ export async function getJobApplicationByIdService(id: string) {
 }
 
 export async function createJobApplicationService(data: Omit<JobApplications, 'id' | 'createdAt'>) {
-  return prisma.jobApplications.create({ data });
+  try {
+    return await prisma.jobApplications.create({ data });
+  } catch (error) {
+    console.error('Error creating job application:', error);
+    throw new Error('Error creating job application');
+  }
 }
 
 export async function updateJobApplicationService(id: string, data: Partial<Omit<JobApplications, 'id' | 'createdAt'>>) {
-  return prisma.jobApplications.update({ where: { id }, data });
+  try {
+    return await prisma.jobApplications.update({ where: { id }, data });
+  } catch (error) {
+    console.error('Error updating job application:', error);
+    throw new Error('Error updating job application');
+  }
 }
 
 export async function deleteJobApplicationService(id: string) {
-  return prisma.jobApplications.delete({ where: { id } });
+  try {
+    return await prisma.jobApplications.delete({ where: { id } });
+  } catch (error) {
+    console.error('Error deleting job application:', error);
+    throw new Error('Error deleting job application');
+  }
 }

@@ -114,12 +114,12 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link href="/auth">
-                  <Button variant="outline">
+                <Link href="/auth/sign-in">
+                  <Button variant="secondary">
                     Accedi
                   </Button>
                 </Link>
-                <Link href="/auth">
+                <Link href="/auth/sign-up">
                   <Button>
                     Registrati
                   </Button>

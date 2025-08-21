@@ -1,14 +1,15 @@
 "use client";
 import React from "react";
 import { Button } from "./ui/button";
-import { authApi } from "@/lib/auth-api";
+import { useAuth } from "@/context/auth-provider";
 import { useRouter } from "next/navigation";
 
 const LogoutButton = () => {
   const router = useRouter();
+  const { logout } = useAuth();
 
   const onLogout = () => {
-    const { logout } = authApi();
+
     logout();
     router.push("/login");
   };

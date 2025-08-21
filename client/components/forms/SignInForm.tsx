@@ -11,7 +11,7 @@ export const SignInForm = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,6 +33,13 @@ export const SignInForm = () => {
 
   };
 
+  const handleLoginWithGoogle = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (error) {
+      setError('Errore durante il login con Google');
+    }
+  };
 
   const goToRegister = () => {
     router.push('/auth/sign-up');
@@ -124,8 +131,8 @@ export const SignInForm = () => {
       {/**
          *  Google button
          */}
-      {/*  <Button
-        onClick={handleGoogleLogin}
+         <Button
+        onClick={handleLoginWithGoogle}
         variant="outline"
         disabled={loading}
         className="w-full"
@@ -149,7 +156,7 @@ export const SignInForm = () => {
           />
         </svg>
         Continua con Google
-      </Button> */}
+      </Button> 
 
 
 
