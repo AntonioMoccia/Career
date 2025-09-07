@@ -2,7 +2,9 @@ import { prisma } from '@config/db';
 import { JobApplications } from '@types';
 
 export async function getAllJobApplicationsService() {
-  return prisma.jobApplications.findMany();
+  return prisma.jobApplications.findMany({
+    include: { company: true, hrContacts: true, steps: true }
+  });
 }
 
 export async function getJobApplicationByIdService(id: string) {
