@@ -14,11 +14,13 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/context/auth-provider"
-import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, FileText, Calendar, Users, FolderOpen, Settings, Briefcase, User, UsersRound, HomeIcon } from "lucide-react"
+import { FileText, Calendar, Settings, Briefcase, User, UsersRound, HomeIcon } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { Button } from "./ui/button"
+import { Popover, PopoverTrigger, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
+import { useRouter } from "next/navigation"
 
 
 // Menu items.
@@ -64,8 +66,8 @@ interface AppSidebarProps {
 export function AppSidebar() {
 
     const { open, setOpen } = useSidebar()
-    const { session, isLoading } = useAuth()
-
+    const { session , logout} = useAuth()
+    const router = useRouter()
     const [openedonhover, setopenedonhover] = useState(false);
 
     const openOnHover = () => {
@@ -121,15 +123,43 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter className={cn("border-t border-slate-200 dark:border-slate-800 p-4", !open && "hidden")}>
-                <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                        <User className="h-4 w-4 text-white" />
+             <Popover>
+                <PopoverTrigger asChild>
+                   <Button variant={"ghost"} className="w-full  p-0">
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                            <User className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex justify-start flex-col items-start min-w-0">
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{session?.user?.name}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{session?.user?.email}</p>
+                        </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{session?.user?.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{session?.user?.email}</p>
+                </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                    <div className="flex flex-col">
+                        <Link href="/profile">
+                            <Button variant="ghost" className="justify-start rounded-none rounded-t-lg w-full">
+                                Profilo
+                            </Button>
+                        </Link>
+                        <Link href="/settings">
+                            <Button variant="ghost" className="justify-start rounded-none w-full">
+                                Impostazioni
+                            </Button>
+                        </Link>
+                        <Link href="/logout">
+                            <Button onClick={async ()=>{
+                                await logout()
+                                router.push("/auth/sign-in")
+                            }} variant="ghost" className="justify-start rounded-none rounded-b-lg w-full ">
+                                Logout
+                            </Button>
+                        </Link>
                     </div>
-                </div>
+                </PopoverContent>
+             </Popover>
             </SidebarFooter>
         </Sidebar>
     )
